@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  fname     String?
+  lname     String?
+  avatar    String   @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  email     String?  @unique @db.VarChar(255)
+  tel       String?
+  role      String   @default("User") @db.VarChar(255) // User roles: Admin, Cashier, etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  orders    Order[]
+}
+
+model Product {
+  id          Int         @id @default(autoincrement())
+  name        String      @db.VarChar(255)
+  description String?     @db.Text
+  price       Float
+  stock       Int // Quantity in stock
+  category    Category    @relation(fields: [categoryId], references: [id])
+  categoryId  Int
+  barcode     String      @unique
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @default(now()) @updatedAt
+  orderItems  OrderItem[]
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  products Product[]
+}
+
+model Order {
+  id         Int         @id @default(autoincrement())
+  user       User        @relation(fields: [userId], references: [id]) // Cashier or Admin
+  userId     Int
+  customer   Customer?   @relation(fields: [customerId], references: [id])
+  customerId Int?
+  total      Float
+  status     String      @default("Pending") @db.VarChar(255) // Pending, Completed, Cancelled
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @default(now()) @updatedAt
+  items      OrderItem[]
+  payment    Payment?
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  order     Order   @relation(fields: [orderId], references: [id])
+  orderId   Int
+  product   Product @relation(fields: [productId], references: [id])
+  productId Int
+  quantity  Int
+  price     Float // Price at the time of the order
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(255)
+  email     String?  @unique @db.VarChar(255)
+  tel       String?
+  orders    Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Payment {
+  id        Int         @id @default(autoincrement())
+  order     Order       @relation(fields: [orderId], references: [id])
+  orderId   Int         @unique // Ensure it's unique for a one-to-one relation
+  amount    Float
+  type      PaymentType @relation(fields: [typeId], references: [id])
+  typeId    Int
+  status    String      @default("Pending") @db.VarChar(255) // Pending, Completed, Failed
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @default(now()) @updatedAt
+}
+
+model PaymentType {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique // e.g., Cash, Credit Card, Mobile Payment
+  description String?   @db.Text
+  payments    Payment[]
+}
