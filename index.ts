@@ -1,5 +1,4 @@
 import { Request , Response , NextFunction } from "express"
- 
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs';
 import { login ,register } from "./controllers/auth/authController"; // Import the login function
@@ -22,7 +21,11 @@ const prisma = new PrismaClient()
 
 
 
-app.use(cors())
+app.use(cors({
+  origin: process.env.SERVER_URL,  // หรือ URL ที่คุณต้องการอนุญาต
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // วิธีที่อนุญาต
+  credentials: true, // ถ้าคุณต้องการให้ส่ง cookies หรือ authorization headers
+}))
 
 app.use(express.json());
 
