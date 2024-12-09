@@ -21,47 +21,35 @@ const prisma = new PrismaClient()
 
 
 
+// CORS middleware
 app.use(cors({
-  origin: process.env.SERVER_URL,  // หรือ URL ที่คุณต้องการอนุญาต
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // วิธีที่อนุญาต
-  credentials: true, // ถ้าคุณต้องการให้ส่ง cookies หรือ authorization headers
-}))
+  origin: process.env.SERVER_URL,  // Set allowed origin URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+}));
 
+// Body parser middleware
 app.use(express.json());
 
-app.get("/users" , getUsersAll);
-app.get("/users/:id" , getUserbyID)
-
+// Routes
+app.get("/users", getUsersAll);
+app.get("/users/:id", getUserbyID);
 app.post("/login", login);
-app.post("/register" , register);
-
+app.post("/register", register);
 app.get("/isAdmin", authenticateJWT, isAdmin);
-
 app.get("/check-s", authenticateJWT, checkAdmin);
-
 app.put("/manageuser/:id", ManageUserById);
 app.delete("/manageuser/:id", DeleteUserById);
 
-app.get('/allpd',getAllProducts);
-app.post('/checkout' , createOrder)
-app.get('/orders', getOrders); 
+app.get('/products', productController.getAllProducts);  // Ensure productController methods are exported properly
+app.post('/checkout', createOrder);
+app.get('/orders', getOrders);
 
-
-app.get('/products', productController.getAllProducts);
-app.get('/products/:id', productController.getProductById);
-app.post('/products', productController.createProduct);
-app.put('/products/:id', productController.updateProduct);
-app.delete('/products/:id', productController.deleteProduct);
-
-app.get('/reports/summary',getSalesSummary);
-app.get('/reports/top-products',getTopProducts);
+app.get('/reports/summary', getSalesSummary);
+app.get('/reports/top-products', getTopProducts);
 app.get('/reports/top-categories', getTopCategories);
 
 // Category routes
-app.get('/categoriesPD', productController.getAllCategories);
-app.post('/categoriesPD', productController.createCategory);
-
-
 app.get('/categories', getAllCategories);
 app.post('/categories', createCategory);
 app.put('/categories/:id', updateCategory);
@@ -78,41 +66,13 @@ app.get("/protected", authenticateJWT, (req: Request, res: Response) => {
   res.status(200).json({ message: "You have access to this protected route!" });
 });
 
+// Global error handler
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error(err.stack);
+  res.status(500).json({ message: "Something went wrong!" });
+});
 
-
-// app.post("/login", login);
-// app.post("/register" , register)
-
-// app.get('/users', getUsersAll)
-// app.get('/users/:userId', getUserbyID)
-// app.post('/manageuser',ManageUserById)
- 
-
-
-
-
+// Start the server
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
-
-// app.listen(5001, function () {
-//   console.log('CORS-enabled web server listening on port 80')
-// })
-
-// app.use("/auth", authRoutes);
-// app.use("/users", userRoutes);
-
-// // Error handler
-// app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-//     console.error(err.stack);
-//     res.status(500).json({
-//         status: "error",
-//         message: "Internal server error",
-//     });
-// });
-
-// // Start Server
-// const PORT = process.env.PORT || 5001;
-// app.listen(PORT, () => {
-//     console.log(`Server is running on http://localhost:${PORT}`);
-// });
