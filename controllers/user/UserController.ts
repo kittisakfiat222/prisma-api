@@ -27,7 +27,7 @@ export const getUserbyID =  async (req: Request, res: Response) => {
         });
     }
 
-    return res.status(200).json({ user  : user});
+    return res.status(200).json({ users : user});
 };
 
 // Update user

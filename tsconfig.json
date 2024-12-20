@@ -7,8 +7,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "typeRoots": ["./node_modules/@types", "./typings"]
   },
-  "include": ["src/**/*.ts", "express.d.ts"],  // Include your custom declaration file
+  "include": ["src/**/*.ts", "express.d.ts"],
   "exclude": ["node_modules"]
 }

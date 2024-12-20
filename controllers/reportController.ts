@@ -73,41 +73,111 @@ export const getSalesSummary = [
 
 // Get most-sold products
 export const getTopProducts = [
-    authenticateJWT,  async (req: Request, res: Response) => {
-  try {
-    const topProducts = await prisma.orderItem.groupBy({
-      by: ["productId"],
-      _sum: {
-        quantity: true,
-        price: true,
-      },
-      orderBy: {
+  authenticateJWT,
+  async (req: Request, res: Response) => {
+    try {
+      // Step 1: คำนวณผลรวมของจำนวนสินค้าต่อ productId
+      const topProducts = await prisma.orderItem.groupBy({
+        by: ["productId"],
         _sum: {
-          quantity: "desc",
+          quantity: true,
         },
-      },
-      take: 10,
-    });
+        orderBy: {
+          _sum: {
+            quantity: "desc",
+          },
+        },
+        take: 10,
+      });
 
-    const products = await Promise.all(
-      topProducts.map(async (item) => {
-        const product = await prisma.product.findUnique({
-          where: { id: item.productId },
-        });
-        return {
-          product,
-          totalQuantity: item._sum.quantity,
-          totalSales: item._sum.price,
-        };
-      })
-    );
+      // Step 2: คำนวณราคาสินค้ารวมจากการคูณ quantity * price จาก product
+      const products = await Promise.all(
+        topProducts.map(async (item) => {
+          // ดึงข้อมูลราคาจากตาราง product
+          const product = await prisma.product.findUnique({
+            where: { id: item.productId },
+          });
 
-    res.status(200).json(products);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error fetching top products" });
-  }
-}];
+          // ตรวจสอบให้มั่นใจว่า product ไม่เป็น null
+          if (!product) {
+            throw new Error(`Product with ID ${item.productId} not found`);
+          }
+
+          // ป้องกันการคูณกับ quantity ที่เป็น null หรือ undefined
+          const quantity = item._sum.quantity ?? 0;
+
+          // คำนวณ totalSales โดยการคูณจำนวนสินค้าที่ขายกับราคาของสินค้านั้นๆ
+          const totalSales = product.price * quantity;
+
+          return {
+            product,
+            totalQuantity: quantity,
+            totalSales: totalSales,
+          };
+        })
+      );
+
+      res.status(200).json(products);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Error fetching top products" });
+    }
+  },
+];
+// export const getTopProducts = [
+//   authenticateJWT,
+//   async (req: Request, res: Response) => {
+//     try {
+//       // Step 1: รวมยอดขาย (quantity * price) ต่อตัว productId
+//       const topProducts = await prisma.orderItem.groupBy({
+//         by: ["productId"],
+//         _sum: {
+//           quantity: true, // รวมจำนวนสินค้า
+//           price: true,    // รวมราคาสินค้า
+//         },
+//         orderBy: {
+//           _sum: {
+//             quantity: "desc", // เรียงตามจำนวนสินค้าขาย
+//           },
+//         },
+//         take: 10,
+//       });
+
+//       // Step 2: คำนวณยอดขายรวมจากข้อมูล quantity และ price
+//       const products = await Promise.all(
+//         topProducts.map(async (item) => {
+//           // ดึงข้อมูลสินค้า
+//           const product = await prisma.orderItem.findUnique({
+//             where: { id: item.productId },
+//           });
+
+//           // ตรวจสอบให้มั่นใจว่า product ไม่เป็น null
+//           if (!product) {
+//             throw new Error(`Product with ID ${item.productId} not found`);
+//           }
+
+//           // คำนวณ totalSales
+//           const quantity = item._sum?.quantity ?? 0;
+//           const pricePerUnit = item._sum?.price ?? 0;
+//           const totalSales = item._sum?.price;
+
+//           return {
+//             product,
+//             totalQuantity: quantity,
+//             totalSales: totalSales,
+//           };
+//         })
+//       );
+
+//       res.status(200).json(products);
+//     } catch (error) {
+//       console.error(error);
+//       res.status(500).json({ message: "Error fetching top products" });
+//     }
+//   },
+// ];
+
+
 
 // Get most-sold categories
 export const getTopCategories = [
